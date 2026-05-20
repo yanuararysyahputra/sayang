@@ -10,39 +10,44 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [shake, setShake] = useState(false);
   const [typedText, setTypedText] = useState("");
-const [isPlaying, setIsPlaying] = useState(false);
   // PASSWORD
   const correctPassword = "230598";
 
   // INPUT NUMBER
-  const handleNumber = (num: string) => {
-    if (password.length < 6) {
-      const newPassword = password + num;
-      setPassword(newPassword);
+  const handleNumber = async (num: string) => {
 
-      if (newPassword.length === 6) {
-        if (newPassword === correctPassword) {
-          setTimeout(() => {
-            setUnlocked(true);
-          }, 300);
-        } else {
-          setShake(true);
+  // START MUSIC SAAT PENCET ANGKA PERTAMA
+  if (!isPlaying) {
+    await startMusic();
+  }
 
-          setTimeout(() => {
-            setPassword("");
-            setShake(false);
-          }, 500);
-        }
+  if (password.length < 6) {
+    const newPassword = password + num;
+    setPassword(newPassword);
+
+    if (newPassword.length === 6) {
+      if (newPassword === correctPassword) {
+        setTimeout(() => {
+          setUnlocked(true);
+        }, 300);
+      } else {
+        setShake(true);
+
+        setTimeout(() => {
+          setPassword("");
+          setShake(false);
+        }, 500);
       }
     }
-  };
+  }
+};
 
   // DELETE NUMBER
   const handleDelete = () => {
     setPassword(password.slice(0, -1));
   };
   const fullText =
-  "thank you for always being here for me, thank you for making my days happier, and thank you for being the best part of my life ✨ enjoyy your birthday my love, all the best for you ever ❤️";
+  "Happy Birthday Sayangku, Cintaku, Semoga sehat selalu, bahagia selalu, sukses selalu, dan apa yang selama ini diimpikan dapat segera tercapai aamiin..✨Sekali lagi Happy Birthday dan Bahagia Selalu..❤️";
 
 useEffect(() => {
   if (page === 8) {
@@ -64,41 +69,44 @@ useEffect(() => {
   }
 }, [page]);
 
-const [audio] = useState(
-  typeof Audio !== "undefined"
-    ? new Audio("/music/1.mp3")
-    : null
-);
+const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  
 
-    const toggleMusic = () => {
+const [isPlaying, setIsPlaying] = useState(false);
+
+// PLAY MUSIC
+const startMusic = async () => {
   if (!audio) return;
 
-  if (isPlaying) {
-    audio.pause();
-    setIsPlaying(false);
-  } else {
-    audio.loop = true;
-    audio.play();
-    setIsPlaying(true);
-  }
-};
-
-// AUTO PLAY MUSIC SAAT WEBSITE DIBUKA
-useEffect(() => {
-  if (audio) {
+  try {
     audio.loop = true;
     audio.volume = 0.5;
 
-    audio
-      .play()
-      .then(() => {
-        setIsPlaying(true);
-      })
-      .catch((err) => {
-        console.log("Autoplay blocked:", err);
-      });
+    await audio.play();
+
+    setIsPlaying(true);
+  } catch (err) {
+    console.log(err);
   }
-}, []);
+};
+
+// TOGGLE MUSIC
+const toggleMusic = async () => {
+  if (!audio) return;
+
+  try {
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      await audio.play();
+      setIsPlaying(true);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 
 // AUTO STOP MUSIC SAAT MASUK PAGE 9
 useEffect(() => {
@@ -153,10 +161,12 @@ useEffect(() => {
   transition={{ duration: 0.8 }}
   className="
     relative
-    w-[260px]
-    h-[460px]
+    w-[340px]
+    h-[200px]
+    sm:w-[500px]
+    sm:h-[280px]
     mx-auto
-    rounded-[35px]
+    rounded-[28px]
     overflow-hidden
     border-[6px]
     border-white
@@ -167,7 +177,7 @@ useEffect(() => {
 
   {/* Video */}
   <video
-    src="/video/surprisee.mp4"
+    src="/video/surprise.mp4"
     autoPlay
     loop
     controls
@@ -179,7 +189,7 @@ useEffect(() => {
     className="
       absolute
       inset-0
-      rounded-[35px]
+      rounded-[28px]
       ring-4
       ring-[#7ea6ff]/30
       pointer-events-none
@@ -1514,10 +1524,10 @@ if (unlocked && page === 8) {
 
             {/* Button */}
             <motion.button
-              onClick={() => setPage(2)}
-              whileTap={{
-                scale: 0.88,
-              }}
+              onClick={async () => {
+  await startMusic();
+  setPage(2);
+}}
               animate={{
                 y: [0, -5, 0],
                 scale: [1, 1.04, 1],
@@ -1555,11 +1565,23 @@ if (unlocked && page === 8) {
     );
   }
 
+
+
   // =========================
   // LOCK SCREEN
   // =========================
   return (
   <AnimatePresence mode="wait">
+
+    <audio
+  ref={(el) => {
+    if (el && !audio) {
+      setAudio(el);
+    }
+  }}
+  src="/music/1.webm"
+  loop
+/>
     <motion.main
       key={page}
       initial={{
@@ -1643,40 +1665,55 @@ if (unlocked && page === 8) {
           </div>
 
           {/* KEYPAD */}
-          <div className="grid grid-cols-3 gap-2">
-            {[1,2,3,4,5,6,7,8,9,"",0,"delete"].map((item, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  if (item === "delete") {
-                    handleDelete();
-                  } else if (item !== "") {
-                    handleNumber(item.toString());
-                  }
-                }}
-                className="
-                  aspect-square
-                  rounded-[16px]
-                  bg-white
-                  shadow-sm
-                  text-base
-                  font-bold
-                  text-[#18489b]
-                  active:scale-95
-                  transition
-                  flex
-                  items-center
-                  justify-center
-                "
-              >
-                {item === "delete" ? (
-                  <Delete size={16} />
-                ) : (
-                  item
-                )}
-              </button>
-            ))}
-          </div>
+<div className="grid grid-cols-3 gap-2">
+  {[1,2,3,4,5,6,7,8,9,"",0,"delete"].map((item, index) => (
+    <motion.button
+      key={index}
+      whileTap={{
+        scale: 0.9,
+      }}
+      onClick={() => {
+        if (item === "delete") {
+          handleDelete();
+        } else if (item !== "") {
+          handleNumber(item.toString());
+        }
+      }}
+      className={`
+        aspect-square
+        rounded-[16px]
+        text-base
+        font-bold
+        transition-all
+        duration-200
+        flex
+        items-center
+        justify-center
+        border
+        border-[#dbe7ff]
+
+        ${
+          item !== ""
+            ? `
+              bg-white
+              text-[#18489b]
+              shadow-md
+              active:bg-[#18489b]
+              active:text-white
+              active:shadow-[0_0_25px_rgba(24,72,155,0.6)]
+            `
+            : "bg-transparent shadow-none border-none"
+        }
+      `}
+    >
+      {item === "delete" ? (
+        <Delete size={16} />
+      ) : (
+        item
+      )}
+    </motion.button>
+  ))}
+</div>
 
           <p className="mt-5 text-[10px] text-[#18489b] opacity-70">
             clue : your birthday
